@@ -9,6 +9,8 @@ public class ObjectSizeMeasurerImpl implements ObjectSizeMeasurer {
 
     private int arraySize = DEFAULT_ARRAY_SIZE;
 
+    private Object[] array;
+
     public ObjectSizeMeasurerImpl() {
     }
 
@@ -19,21 +21,18 @@ public class ObjectSizeMeasurerImpl implements ObjectSizeMeasurer {
     @Override
     public <T> long measure(Supplier<T> supplier) {
         try {
-            System.gc();
-            Thread.sleep(10);
+            array = new Object[arraySize];
 
-            Object[] array = new Object[arraySize];
+            long occupiedMemoryBefore, occupiedMemoryAfter, difference;
 
-            Runtime runtime = Runtime.getRuntime();
-            long occupiedMemoryBefore;
-            occupiedMemoryBefore = runtime.totalMemory() - runtime.freeMemory();
+            occupiedMemoryBefore = calculateOccupiedMemory();
 
             for (int i = 0; i < array.length; i++) {
                 array[i] = supplier.get();
             }
 
-            long occupiedMemoryAfter = runtime.totalMemory() - runtime.freeMemory();
-            long difference = occupiedMemoryAfter - occupiedMemoryBefore;
+            occupiedMemoryAfter = calculateOccupiedMemory();
+            difference = occupiedMemoryAfter - occupiedMemoryBefore;
 
             return new BigDecimal(difference)
                     .divide(
@@ -45,6 +44,12 @@ public class ObjectSizeMeasurerImpl implements ObjectSizeMeasurer {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    private long calculateOccupiedMemory() throws InterruptedException {
+        System.gc();
+        Thread.sleep(10);
+        return Runtime.getRuntime().totalMemory() - Runtime.getRuntime().freeMemory();
     }
 
     public int getArraySize() {

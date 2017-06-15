@@ -12,10 +12,12 @@ public class Main {
         });
         System.out.println("Empty string size = " + objectSize);
 
+
         objectSize = measurer.measure(() -> {
             return new Object();
         });
         System.out.println("Object size = " + objectSize);
+
 
         objectSize = measurer.measure(() -> {
             return new SizeTestObject();
