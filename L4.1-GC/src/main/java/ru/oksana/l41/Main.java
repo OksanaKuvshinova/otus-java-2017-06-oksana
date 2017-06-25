@@ -8,8 +8,7 @@ import javax.management.openmbean.CompositeData;
 import java.lang.management.GarbageCollectorMXBean;
 import java.util.List;
 
-import static java.lang.System.currentTimeMillis;
-
+//VM options -Xmx512m -Xms512m
 public class Main {
 
     public static void main(String[] args) throws InterruptedException {
@@ -26,13 +25,7 @@ public class Main {
             System.out.println("Milliseconds passed: " + (checkTime - startTime));
         }
     }
-
-//VM options -Xmx512m -Xms512m
-//VM options -Xdebug -Xrunjdwp:server=y,transport=dt_socket,address=4000, suspend=n
-//VM options  -javaagent:target/L2.1.jar
-//VM options  -XX:+UseSerialGC
-
-
+    
     private static void installGCMonitoring() {
         List<GarbageCollectorMXBean> gcbeans = java.lang.management.ManagementFactory.getGarbageCollectorMXBeans();
         for (GarbageCollectorMXBean gcbean : gcbeans) {
