@@ -7,15 +7,14 @@ public class MemoryLeaker {
 
     private int addSize = 5_000_000;
     private double clearenceIndex = 0.95;
+    private long sleepTime = 5000;
 
     private List<String> pool = new ArrayList<>();
 
     public void doWork() throws InterruptedException {
         fillPool();
-        System.out.println("After fill Pool Size = " + pool.size());
-        Thread.sleep(75000);
+        Thread.sleep(sleepTime);
         clearPoolWithLeak();
-        System.out.println("After clear Pool Size = " + pool.size());
     }
 
     private void fillPool() {

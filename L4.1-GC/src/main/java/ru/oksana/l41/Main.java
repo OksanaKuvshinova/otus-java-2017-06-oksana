@@ -6,7 +6,9 @@ import javax.management.NotificationEmitter;
 import javax.management.NotificationListener;
 import javax.management.openmbean.CompositeData;
 import java.lang.management.GarbageCollectorMXBean;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 //VM options -Xmx512m -Xms512m
 public class Main {
@@ -17,38 +19,44 @@ public class Main {
 
         MemoryLeaker ml = new MemoryLeaker();
 
-        long startTime = System.currentTimeMillis();
-
         while (true) {
             ml.doWork();
-            long checkTime = System.currentTimeMillis();
-            System.out.println("Milliseconds passed: " + (checkTime - startTime));
         }
     }
-    
+
     private static void installGCMonitoring() {
         List<GarbageCollectorMXBean> gcbeans = java.lang.management.ManagementFactory.getGarbageCollectorMXBeans();
-        for (GarbageCollectorMXBean gcbean : gcbeans) {
-            NotificationEmitter emitter = (NotificationEmitter) gcbean;
-            System.out.println(gcbean.getName());
+
+        Map<String, GCInfoAggregator> gcInfoAggregators = initGcInfoAggregators(gcbeans);
+
+        for (GarbageCollectorMXBean gcBean : gcbeans) {
+            NotificationEmitter emitter = (NotificationEmitter) gcBean;
+            System.out.println(gcBean.getName());
 
             NotificationListener listener = (notification, handback) -> {
                 if (notification.getType().equals(GarbageCollectionNotificationInfo.GARBAGE_COLLECTION_NOTIFICATION)) {
                     GarbageCollectionNotificationInfo info = GarbageCollectionNotificationInfo.from((CompositeData) notification.getUserData());
 
-                    long duration = info.getGcInfo().getDuration();
-                    String gctype = info.getGcAction();
-
-                    System.out.println(gctype + ": - "
-                            + info.getGcInfo().getId() + ", "
-                            + info.getGcName()
-                            + " (from " + info.getGcCause() + ") " + duration + " milliseconds");
-
+                    gcInfoAggregators
+                            .get(info.getGcName())
+                            .collect(info.getGcInfo());
+                    System.out.println(
+                            gcInfoAggregators.get(info.getGcName())
+                    );
                 }
             };
 
             emitter.addNotificationListener(listener, null, null);
         }
+    }
+
+    private static Map<String, GCInfoAggregator> initGcInfoAggregators(List<GarbageCollectorMXBean> gcbeans) {
+        Map<String, GCInfoAggregator> gcInfoAggregators = new HashMap<>();
+        long currentTime = System.currentTimeMillis();
+        for (GarbageCollectorMXBean gcBean : gcbeans) {
+            gcInfoAggregators.put(gcBean.getName(), new GCInfoAggregator(gcBean.getName(), currentTime));
+        }
+        return gcInfoAggregators;
     }
 
 }
